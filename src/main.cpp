@@ -6,13 +6,13 @@
 
 // Define os pinos
 #define BUTTON_PIN         13
-#define BUZZER_PIN         22
+#define BUZZER_PIN         27
 #define LED_BUILTIN        2 // LED da placa ESP32 (GPIO2)
 
 // Tempos de debounce e detecção de sinal (ajuste com base em testes)
 #define DEBOUNCE_MS        50   // Tempo para ignorar instabilidade do botão
 #define MIN_SIGNAL_MS      30   // Duração mínima para considerar um pressionamento como sinal (não ruído)
-#define END_OF_LETTER_PAUSE_MS 800 // Tempo de pausa para indicar o fim de uma letra Morse (ajuste!)
+#define END_OF_LETTER_PAUSE_MS 400 // Tempo de pausa para indicar o fim de uma letra Morse 
 #define MAX_MORSE_SIGNALS  5    // Máximo de sinais (dits/dahs) para uma letra no seu modelo
 
 // Variáveis de estado do botão
@@ -26,7 +26,7 @@ unsigned long lastDebounceTime = 0;       // Tempo do último debounce
 std::vector<float> currentMorseSignals; // Vetor para armazenar as durações dos dits/dahs da letra atual
 
 // Configuração da arena do modelo
-alignas(16) constexpr int arenaSize = 10 * 1024;
+alignas(16) constexpr int arenaSize = 5 * 1024;
 
 // Valores min/max para normalização - lembrar de atualizar de acordo com os dados do treinamento
 const float DATA_MIN = 0.0;     
@@ -94,20 +94,15 @@ void processMorseLetter(const std::vector<float>& signals) {
     if (predicted_class_index != -1) {
         Serial.printf("Classe prevista: %s (Probabilidade: %.2f%%)\n",
                       class_labels[predicted_class_index], max_prob * 100.0f);
-        for(int i=0; i<2; ++i) {
-            digitalWrite(LED_BUILTIN, HIGH);
-            // Configuração do buzzer usando ledc para tone
-            ledcWrite(0, 128); // 50% duty cycle para o canal 0 (128 de 255 para 8 bits)
-            delay(100);
-            digitalWrite(LED_BUILTIN, LOW);
-            ledcWrite(0, 0); // Desliga o som no canal 0
-            delay(100);
-        }
+        digitalWrite(LED_BUILTIN, HIGH);
+        delay(100);
+        digitalWrite(LED_BUILTIN, LOW);
     } else {
         Serial.println("Erro: Nenhuma classe prevista.");
     }
     Serial.println("------------------------------------");
 }
+
 
 void setup() {
   Serial.begin(115200);
@@ -147,13 +142,17 @@ void loop() {
         // Botão foi pressionado
         isButtonCurrentlyPressed = true;
         pressStartTime = currentTime;
-        digitalWrite(LED_BUILTIN, HIGH); // Feedback visual
+        //digitalWrite(LED_BUILTIN, HIGH); // Feedback visual
+        ledcWrite(0, 128);  // 50% volume no canal 0
     }
 
     if (reading == HIGH && isButtonCurrentlyPressed) {
         // Botão foi solto
         isButtonCurrentlyPressed = false;
-        digitalWrite(LED_BUILTIN, LOW); // Desliga o LED
+        //digitalWrite(LED_BUILTIN, LOW); // Desliga o LED
+
+        // Desliga o buzzer
+        ledcWrite(0, 0);
 
         unsigned long pressDuration = currentTime - pressStartTime;
         if (pressDuration >= MIN_SIGNAL_MS) {
