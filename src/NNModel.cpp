@@ -22,8 +22,8 @@ NNModel::NNModel(int kArenaSize, const unsigned char *model){
     resolver->AddFullyConnected();
     resolver->AddSoftmax();
 
-    //tensor_arena = (uint8_t *)malloc(kArenaSize);
-    tensor_arena = (uint8_t*)heap_caps_malloc(200 * 1024, MALLOC_CAP_SPIRAM);
+    tensor_arena = (uint8_t *)malloc(kArenaSize);
+    //tensor_arena = (uint8_t*)heap_caps_malloc(200 * 1024, MALLOC_CAP_SPIRAM);
 
     if (!tensor_arena)    {
         MicroPrintf("Could not allocate arena");
