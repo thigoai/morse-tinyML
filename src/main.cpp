@@ -26,11 +26,11 @@ unsigned long lastDebounceTime = 0;       // Tempo do último debounce
 std::vector<float> currentMorseSignals; // Vetor para armazenar as durações dos dits/dahs da letra atual
 
 // Configuração da arena do modelo
-alignas(16) constexpr int arenaSize = 10 * 1024;
+alignas(16) constexpr int arenaSize = 20 * 1024;
 
 // Valores min/max para normalização - lembrar de atualizar de acordo com os dados do treinamento
 const float DATA_MIN = 0.0;     
-const float DATA_MAX = 2000.0f; 
+const float DATA_MAX = 542.0f; 
 
 NNModel *model_morse;
 
@@ -80,7 +80,7 @@ void processMorseLetter(const std::vector<float>& signals) {
     Serial.print("Saídas do modelo (probabilidades): ");
     float max_prob = -1.0f;
     int predicted_class_index = -1;
-    const char* class_labels[] = {"A","E","I","L","O","S","T","W"}; 
+    const char* class_labels[] = {"O","S","T"}; 
 
     for (int i = 0; i < num_classes; ++i) {
         Serial.printf("%.4f ", outputBuffer[i]);
