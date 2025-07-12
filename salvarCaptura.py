@@ -2,7 +2,7 @@ import serial
 import time
 import os
 
-porta = '/dev/ttyACM1'
+porta = '/dev/ttyACM0'
 baud_rate = 115200
 arquivo_saida = "dados/dados_morse_com_rotulo.csv"
 

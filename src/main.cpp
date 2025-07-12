@@ -30,7 +30,7 @@ alignas(16) constexpr int arenaSize = 20 * 1024;
 
 // Valores min/max para normalização - lembrar de atualizar de acordo com os dados do treinamento
 const float DATA_MIN = 0.0;     
-const float DATA_MAX = 542.0f; 
+const float DATA_MAX = 988.0f; 
 
 NNModel *model_morse;
 
@@ -80,7 +80,8 @@ void processMorseLetter(const std::vector<float>& signals) {
     Serial.print("Saídas do modelo (probabilidades): ");
     float max_prob = -1.0f;
     int predicted_class_index = -1;
-    const char* class_labels[] = {"O","S","T"}; 
+    const char* class_labels[] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+ //{"O","S","T"};
 
     for (int i = 0; i < num_classes; ++i) {
         Serial.printf("%.4f ", outputBuffer[i]);
@@ -196,3 +197,5 @@ void loop() {
 
     lastDebouncedButtonState = reading;
 }
+
+
