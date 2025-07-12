@@ -1,15 +1,20 @@
 import serial
 import time
+import os
 
-porta = 'COM27'
+porta = '/dev/ttyACM1'
 baud_rate = 115200
-arquivo_saida = "dados_morse_com_rotulo.csv"
+arquivo_saida = "dados/dados_morse_com_rotulo.csv"
 
 duracoes = []
 
-with serial.Serial(porta, baud_rate, timeout=1) as ser, open(arquivo_saida, 'w') as f:
+modo_arquivo = 'a' if os.path.exists(arquivo_saida) else 'w'
+
+with serial.Serial(porta, baud_rate, timeout=1) as ser, open(arquivo_saida, modo_arquivo) as f:
     print("Gravando dados... Pressione Ctrl+C para parar.")
-    f.write("dur1,dur2,dur3,dur4,dur5,label\n")
+
+    if modo_arquivo == 'w':
+        f.write("dur1,dur2,dur3,dur4,dur5,label\n")
 
     try:
         letra_atual = input("Digite a letra que você quer gravar agora (ou 'sair'): ").strip().upper()
@@ -17,7 +22,7 @@ with serial.Serial(porta, baud_rate, timeout=1) as ser, open(arquivo_saida, 'w')
             exit()
 
         while True:
-            linha = ser.readline().decode('utf-8').strip()
+            linha = ser.readline().decode('utf-8', errors='ignore').strip()
 
             if not linha:
                 continue
