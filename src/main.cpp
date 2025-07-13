@@ -24,40 +24,36 @@ bool isButtonCurrentlyPressed = false;    // Estado atual lógico do botão (ap�
 int lastDebouncedButtonState = HIGH;      // Último estado DEBOUNCED do pino
 unsigned long lastDebounceTime = 0;       // Tempo do último debounce
 
-const char* ssid = "brisa-1495953";
-const char* password = "g1ba6pbi";
+const char* ssid = "rede";
+const char* password = "senha";
 WebServer server(80);
 
 String ultimaLetra = "-";
 String mensagemCompleta = "";
 
-std::vector<float> currentMorseSignals; // Vetor para armazenar as durações dos dits/dahs da letra atual
+std::vector<float> currentMorseSignals; 
 
-// Configuração da arena do modelo
 alignas(16) constexpr int arenaSize = 20 * 1024;
 
-// Valores min/max para normalização - lembrar de atualizar de acordo com os dados do treinamento
+//lembrar de atualizar de acordo com os dados do treinamento
 const float DATA_MIN = 0.0;     
 const float DATA_MAX = 988.0f; 
 
 NNModel *model_morse;
 
-// Função de normalização
 float normalize(float value, float data_min, float data_max) {
     if ((data_max - data_min) == 0) return 0.0;
     return (value - data_min) / (data_max - data_min);
 }
 
-// Função para processar a letra Morse e fazer inferência
 void processMorseLetter(const std::vector<float>& signals) {
     if (signals.empty()) {
         Serial.println("Nenhum sinal para processar.");
         return;
     }
 
-    float input_to_model[MAX_MORSE_SIGNALS] = {0.0f}; // Inicializa com zeros
+    float input_to_model[MAX_MORSE_SIGNALS] = {0.0f};
 
-    // Copia as durações capturadas para o array de entrada do modelo
     for (size_t i = 0; i < signals.size() && i < MAX_MORSE_SIGNALS; ++i) {
         input_to_model[i] = signals[i];
     }
@@ -89,7 +85,7 @@ void processMorseLetter(const std::vector<float>& signals) {
     float max_prob = -1.0f;
     int predicted_class_index = -1;
     const char* class_labels[] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
- //{"O","S","T"};
+
 
     for (int i = 0; i < num_classes; ++i) {
         Serial.printf("%.4f ", outputBuffer[i]);
@@ -266,17 +262,13 @@ void loop() {
 
     // Debounce do botão
     if (reading == LOW && !isButtonCurrentlyPressed) {
-        // Botão foi pressionado
         isButtonCurrentlyPressed = true;
         pressStartTime = currentTime;
-        //digitalWrite(LED_BUILTIN, HIGH); // Feedback visual
         ledcWrite(0, 128);  // 50% volume no canal 0
     }
 
     if (reading == HIGH && isButtonCurrentlyPressed) {
-        // Botão foi solto
         isButtonCurrentlyPressed = false;
-        //digitalWrite(LED_BUILTIN, LOW); // Desliga o LED
 
         // Desliga o buzzer
         ledcWrite(0, 0);
@@ -291,15 +283,12 @@ void loop() {
 
 
     if ((currentTime - lastDebounceTime) > DEBOUNCE_MS) {
-        // Se o estado do botão mudou de verdade
         if (reading == LOW && !isButtonCurrentlyPressed) {
-            // Botão foi pressionado
             isButtonCurrentlyPressed = true;
             pressStartTime = currentTime;
         }
 
         if (reading == HIGH && isButtonCurrentlyPressed) {
-            // Botão foi solto
             isButtonCurrentlyPressed = false;
             unsigned long pressDuration = currentTime - pressStartTime;
 
@@ -318,7 +307,7 @@ void loop() {
         
         Serial.println("Fim da letra detectado. Processando...");
         processMorseLetter(currentMorseSignals);
-        currentMorseSignals.clear(); // Limpa para a próxima letra
+        currentMorseSignals.clear(); 
     }
 
     lastDebouncedButtonState = reading;
