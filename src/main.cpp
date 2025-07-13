@@ -89,6 +89,7 @@ void processMorseLetter(const std::vector<float>& signals) {
     float max_prob = -1.0f;
     int predicted_class_index = -1;
     const char* class_labels[] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
+ //{"O","S","T"};
 
     for (int i = 0; i < num_classes; ++i) {
         Serial.printf("%.4f ", outputBuffer[i]);
@@ -154,25 +155,96 @@ void setup() {
     server.on("/", []() {
     server.send(200, "text/html", R"rawliteral(
         <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"><title>Letra Morse</title></head>
-        <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
-        <h1>Morse decode AI</h1>
-        <h2>OUTPUT:</h3>
-            <p id="mensagem" style="font-size:24px; word-wrap:break-word;"></p>
-            <script>
-            setInterval(() => {
-                fetch("/letra").then(r => r.text()).then(text => {
-                document.getElementById("letra").innerText = text;
-                });
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Morse Decode AI</title>
+            <!-- Inclui o CDN do Tailwind CSS para estilização moderna -->
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+                /* Define a fonte Inter para todo o corpo da página */
+                body {
+                    font-family: 'Inter', sans-serif;
+                }
+                /* Estilos para garantir que o corpo ocupe a altura total da viewport */
+                html, body {
+                    height: 100%;
+                    margin: 0;
+                }
+            </style>
+        </head>
+        <body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white p-6 rounded-lg shadow-md max-w-sm w-full text-center">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">
+                    Morse Decode AI
+                </h1>
+                <h2 class="text-xl font-semibold text-gray-700 mb-6">
+                    OUTPUT:
+                </h2>
+                <!--
+                Parágrafo para exibir a letra Morse individualmente.
+                Adicionado para corresponder ao `fetch("/letra")` no JavaScript.
+                -->
+                <div class="mb-4 p-2">
+                    <p class="text-base text-gray-600 mb-1">Última Letra Recebida:</p>
+                    <p id="letra" class="text-4xl font-extrabold text-gray-900"></p>
+                </div>
 
-                fetch("/mensagem").then(r => r.text()).then(text => {
-                document.getElementById("mensagem").innerText = text;
-                });
-            }, 1000);
-            </script>
+                <!-- Parágrafo para exibir a mensagem decodificada -->
+                <div class="bg-gray-100 p-4 rounded-md border border-gray-200">
+                    <p class="text-base text-gray-600 mb-1">Mensagem Decodificada:</p>
+                    <p id="mensagem" class="text-2xl font-medium text-gray-800 break-words leading-relaxed"></p>
+                </div>
+
+                <script>
+                    // Função para buscar e atualizar os dados do servidor ESP32
+                    function fetchData() {
+                        // Busca a última letra Morse
+                        fetch("/letra")
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.text();
+                            })
+                            .then(text => {
+                                // Atualiza o elemento com a letra recebida
+                                document.getElementById("letra").innerText = text;
+                            })
+                            .catch(error => {
+                                console.error("Erro ao buscar a letra:", error);
+                                document.getElementById("letra").innerText = "Erro!";
+                            });
+
+                        // Busca a mensagem decodificada
+                        fetch("/mensagem")
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.text();
+                            })
+                            .then(text => {
+                                // Atualiza o elemento com a mensagem decodificada
+                                document.getElementById("mensagem").innerText = text;
+                            })
+                            .catch(error => {
+                                console.error("Erro ao buscar a mensagem:", error);
+                                document.getElementById("mensagem").innerText = "Erro ao carregar mensagem.";
+                            });
+                    }
+
+                    // Define um intervalo para buscar os dados a cada 1000 milissegundos (1 segundo)
+                    setInterval(fetchData, 1000);
+
+                    // Chama fetchData uma vez imediatamente para carregar o conteúdo inicial
+                    document.addEventListener('DOMContentLoaded', fetchData);
+                </script>
+            </div>
         </body>
         </html>
+
     )rawliteral");
     });
 
