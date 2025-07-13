@@ -3,6 +3,8 @@
 #include "model.h"
 #include <vector>
 #include <numeric>
+#include <WiFi.h>
+#include <WebServer.h> 
 
 // Define os pinos
 #define BUTTON_PIN         13
@@ -22,6 +24,12 @@ bool isButtonCurrentlyPressed = false;    // Estado atual lógico do botão (ap�
 int lastDebouncedButtonState = HIGH;      // Último estado DEBOUNCED do pino
 unsigned long lastDebounceTime = 0;       // Tempo do último debounce
 
+const char* ssid = "brisa-1495953";
+const char* password = "g1ba6pbi";
+WebServer server(80);
+
+String ultimaLetra = "-";
+String mensagemCompleta = "";
 
 std::vector<float> currentMorseSignals; // Vetor para armazenar as durações dos dits/dahs da letra atual
 
@@ -81,7 +89,6 @@ void processMorseLetter(const std::vector<float>& signals) {
     float max_prob = -1.0f;
     int predicted_class_index = -1;
     const char* class_labels[] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
- //{"O","S","T"};
 
     for (int i = 0; i < num_classes; ++i) {
         Serial.printf("%.4f ", outputBuffer[i]);
@@ -98,6 +105,8 @@ void processMorseLetter(const std::vector<float>& signals) {
         digitalWrite(LED_BUILTIN, HIGH);
         delay(100);
         digitalWrite(LED_BUILTIN, LOW);
+        ultimaLetra = class_labels[predicted_class_index]; 
+        mensagemCompleta += ultimaLetra; 
     } else {
         Serial.println("Erro: Nenhuma classe prevista.");
     }
@@ -106,31 +115,76 @@ void processMorseLetter(const std::vector<float>& signals) {
 
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("Configurando o modelo...");
+    Serial.begin(115200);
+    Serial.println("Configurando o modelo...");
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
 
-  ledcSetup(0, 1000, 8);
-  ledcAttachPin(BUZZER_PIN, 0);
+    ledcSetup(0, 1000, 8);
+    ledcAttachPin(BUZZER_PIN, 0);
 
-  model_morse = new NNModel(arenaSize, model);
+    model_morse = new NNModel(arenaSize, model);
 
-  if (!model_morse->getInputBufferFloat()) {
-      Serial.println("Erro: Não foi possível carregar o modelo ou acessar os buffers!");
-      Serial.println("Verifique o tamanho da arena e a conexão PSRAM.");
-      while(1) {
-        digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-        delay(100);
-      }
-  }
-  Serial.println("Modelo configurado com sucesso.");
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
+    if (!model_morse->getInputBufferFloat()) {
+        Serial.println("Erro: Não foi possível carregar o modelo ou acessar os buffers!");
+        Serial.println("Verifique o tamanho da arena e a conexão PSRAM.");
+        while(1) {
+            digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+            delay(100);
+        }
+    }
+    Serial.println("Modelo configurado com sucesso.");
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
 
+    WiFi.begin(ssid, password);
+    Serial.print("Conectando-se ao WiFi...");
+
+    while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    }
+    Serial.println("Conectado!");
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", []() {
+    server.send(200, "text/html", R"rawliteral(
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="UTF-8"><title>Letra Morse</title></head>
+        <body style="font-family:sans-serif;text-align:center;margin-top:50px;">
+        <h1>Morse decode AI</h1>
+        <h2>OUTPUT:</h3>
+            <p id="mensagem" style="font-size:24px; word-wrap:break-word;"></p>
+            <script>
+            setInterval(() => {
+                fetch("/letra").then(r => r.text()).then(text => {
+                document.getElementById("letra").innerText = text;
+                });
+
+                fetch("/mensagem").then(r => r.text()).then(text => {
+                document.getElementById("mensagem").innerText = text;
+                });
+            }, 1000);
+            </script>
+        </body>
+        </html>
+    )rawliteral");
+    });
+
+    server.on("/letra", []() {
+        server.send(200, "text/plain", ultimaLetra);
+    });
+    server.on("/mensagem", []() {
+        server.send(200, "text/plain", mensagemCompleta);
+    });
+
+
+    server.begin();
 
 }
 
@@ -196,6 +250,9 @@ void loop() {
     }
 
     lastDebouncedButtonState = reading;
+
+    server.handleClient(); 
+
 }
 
 
