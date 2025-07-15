@@ -24,8 +24,8 @@ bool isButtonCurrentlyPressed = false;    // Estado atual lógico do botão (ap�
 int lastDebouncedButtonState = HIGH;      // Último estado DEBOUNCED do pino
 unsigned long lastDebounceTime = 0;       // Tempo do último debounce
 
-const char* ssid = "rede";
-const char* password = "senha";
+const char* ssid = "brisa-1495953";
+const char* password = "g1ba6pbi";
 WebServer server(80);
 
 String ultimaLetra = "-";
